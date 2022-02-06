@@ -1,0 +1,56 @@
+29a30
+> import requests
+101a103
+>         self.last_notify_travel = 0
+1003a1006
+>                         self.notify_estimated_travel()
+1007a1011,1014
+>                         if not self.b_stopped:
+>                             self.notify_finish_travel()
+>                         else:
+>                             self.notify_paused_travel()
+1676a1684,1685
+>                 if not self.options.preview:
+>                     self.notify_travel()
+2166a2176,2216
+> 
+>     def notify_estimated_travel(self):
+>         try:
+>             requests.post("http://localhost:3887/runs/new", data={
+>                 'pen_down_travel_inches': self.pen_down_travel_inches,
+>                 'time': self.time_estimate
+>             })
+>         except:
+>             pass
+> 
+>     def notify_finish_travel(self):
+>         try:
+>             requests.post("http://localhost:3887/runs/finish", data={
+>                 'pen_down_travel_inches': self.pen_down_travel_inches,
+>                 'time': time.time() - self.start_time
+>             })
+>         except:
+>             pass
+> 
+>     def notify_paused_travel(self):
+>         try:
+>             requests.post("http://localhost:3887/runs/paused", data={
+>                 'pen_down_travel_inches': self.pen_down_travel_inches,
+>                 'time': time.time() - self.start_time
+>             })
+>         except:
+>             pass
+> 
+>     def notify_travel(self):
+>         t_ = time.time_ns()
+>         if t_ - self.last_notify_travel < 500000000:
+>             return
+>         self.last_notify_travel = t_
+>         try:
+>             requests.post("http://localhost:3887/runs/update", data={
+>                 'pen_down_travel_inches': self.pen_down_travel_inches,
+>                 'time': time.time() - self.start_time
+>             })
+>         except:
+>             pass
+> 
