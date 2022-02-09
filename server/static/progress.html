@@ -6,8 +6,120 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title></title>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        * {
+          box-sizing: border-box;
+        }
+        #main {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        #stats {
+            position: absolute;
+            width: 100%;
+            bottom: 0;
+            font-family: sans-serif;
+            font-size: 48px;
+            color: #fff;
+            background: #000;
+        }
+        .head {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 2px 8px;
+        }
+        .displayMeters {
+        }
+        .remainingTime {
+        }
+        .body {
+          position: relative;
+          width: 100%;
+          height: 32px;
+          border: 8px solid #fff;
+          background: linear-gradient(#F66, #D00);
+          overflow: hidden;
+        }
+        .progress {
+          background: #fCC;
+          width: 100%;
+          height: 100%;
+          position: relative;
+        }
+    </style>
 </head>
 <body>
-    TODO
+    <div id="main">
+      <div id="stats"></div>
+    </div>
+    <script>
+        async function fetchState() {
+          const r = await fetch("http://localhost:3887/runs/state");
+          const state = await r.json();
+          return state;
+        }
+        function getStats (state) {
+          if (state.runs.length===0) return;
+          let totalMeters = 0
+          let totalSeconds = 0
+          let progressMeters = 0
+          let progressSeconds = 0
+         for (let i = 0; i < state.runs.length; i++) {
+           let run = state.runs[i];
+           totalMeters += run.meters;
+           totalSeconds += run.seconds;
+           if (state.index > i) {
+             progressMeters += run.meters;
+             progressSeconds += run.seconds;
+           }
+         }
+         progressMeters += state.progressMeters + state.accProgressMeters;
+         progressSeconds += state.progressSeconds + state.accProgressSeconds;
+         const twodigits = (d) => d > 9 ? ""+d : "0"+d;
+         const remaining = Math.max(0, Math.round(totalSeconds - progressSeconds));
+         const seconds = remaining % 60;
+         const minutesR = Math.floor(remaining / 60);
+         const minutes = minutesR % 60;
+         const hours = Math.floor(minutesR / 60);
+          return {
+            displayMeters: progressMeters.toFixed(2)+" meters",
+            remainingTime: `${twodigits(hours)}:${twodigits(minutes)}:${twodigits(seconds)}`,
+            totalProgress: progressMeters / totalMeters
+          }
+        }
+        const $stats = document.getElementById("stats")
+        function render (stats) {
+          $stats.innerHTML = !stats ? "" : `<div>
+            <div class="head">
+              <span class="displayMeters">${stats.displayMeters}</span>
+              <span class="remainingTime">${stats.remainingTime}</span>
+            </div>
+            <div class="body">
+              <div class="progress" style="transform:translateX(${(stats.totalProgress * 100).toFixed(2)}%)"></div>
+            </div>
+          </div>`
+        }
+        setInterval(() => {
+          fetchState().then(state => {
+            render(getStats(state));
+          })
+        }, 500);
+    </script>
+    <script>
+        setTimeout(() => {
+        //    location.href = location.href;
+        }, 10000)
+    </script>
 </body>
 </html>
