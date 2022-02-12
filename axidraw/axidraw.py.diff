@@ -1,56 +1,53 @@
-29a30
+29a30,31
+> import threading
 > import requests
-101a103
+62a65,67
+> def request_notification(url, data):
+>     requests.post(url, data=data)
+> 
+72c77
+< 
+---
+>         
+101a107
 >         self.last_notify_travel = 0
-1003a1006
+1003a1010
 >                         self.notify_estimated_travel()
-1007a1011,1014
+1007a1015,1018
 >                         if not self.b_stopped:
 >                             self.notify_finish_travel()
 >                         else:
 >                             self.notify_paused_travel()
-1676a1684,1685
+1676a1688,1689
 >                 if not self.options.preview:
 >                     self.notify_travel()
-2166a2176,2216
+2166a2180,2208
+> 
+>     def get_notification_data(self):
+>         return {
+>             'pen_down_travel_inches': self.pen_down_travel_inches,
+>             'time': self.time_estimate
+>         }
+> 
+>     def notify(self, url):
+>         threading.Thread(
+>             target=request_notification,
+>             args=(url, self.get_notification_data())
+>         ).start()
 > 
 >     def notify_estimated_travel(self):
->         try:
->             requests.post("http://localhost:3887/runs/new", data={
->                 'pen_down_travel_inches': self.pen_down_travel_inches,
->                 'time': self.time_estimate
->             })
->         except:
->             pass
+>         self.notify("http://localhost:3887/runs/new")
 > 
 >     def notify_finish_travel(self):
->         try:
->             requests.post("http://localhost:3887/runs/finish", data={
->                 'pen_down_travel_inches': self.pen_down_travel_inches,
->                 'time': time.time() - self.start_time
->             })
->         except:
->             pass
+>         self.notify("http://localhost:3887/runs/finish")
 > 
 >     def notify_paused_travel(self):
->         try:
->             requests.post("http://localhost:3887/runs/paused", data={
->                 'pen_down_travel_inches': self.pen_down_travel_inches,
->                 'time': time.time() - self.start_time
->             })
->         except:
->             pass
-> 
+>         self.notify("http://localhost:3887/runs/paused")
+>         
 >     def notify_travel(self):
 >         t_ = time.time_ns()
->         if t_ - self.last_notify_travel < 500000000:
+>         if t_ - self.last_notify_travel < 1000000000:
 >             return
 >         self.last_notify_travel = t_
->         try:
->             requests.post("http://localhost:3887/runs/update", data={
->                 'pen_down_travel_inches': self.pen_down_travel_inches,
->                 'time': time.time() - self.start_time
->             })
->         except:
->             pass
+>         self.notify("http://localhost:3887/runs/update")
 > 
