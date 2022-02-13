@@ -13,6 +13,8 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
+            font-size: 48px;
+            font-family: Menlo, Monaco, 'Courier New', monospace;
         }
         * {
           box-sizing: border-box;
@@ -26,10 +28,6 @@
             position: absolute;
             width: 100%;
             bottom: 0;
-            font-family: sans-serif;
-            font-size: 48px;
-            color: #fff;
-            background: #000;
         }
         .head {
           display: flex;
@@ -37,16 +35,20 @@
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          padding: 2px 8px;
+          padding: 6px 4px;
         }
         .displayMeters {
+            color: #F00;
+            text-shadow: #fff 3px 3px 0px, #fff -3px -3px 0px, #fff 3px -3px 0px, #fff -3px 3px 0px;
         }
         .remainingTime {
+            color: #FFF;
         }
         .body {
           position: relative;
           width: 100%;
           height: 32px;
+          border-radius: 2px;
           border: 8px solid #fff;
           background: linear-gradient(#F66, #D00);
           overflow: hidden;
@@ -57,6 +59,14 @@
           height: 100%;
           position: relative;
         }
+        .step {
+          width: 8px;
+          transform: translateX(-4px);
+          height: 100%;
+          background: #fff;
+          position: absolute;
+          top: 0;
+        }
     </style>
 </head>
 <body>
@@ -64,6 +74,11 @@
       <div id="stats"></div>
     </div>
     <script>
+      // TODO REACT
+      // TODO multi progress
+      // TODO timing to be counting remaining time of a given layer
+      // TODO timing to fall into remaining cm when it's <= 0
+      // TODO bar colors + admin to set it
         async function fetchState() {
           const r = await fetch("http://localhost:3887/runs/state");
           const state = await r.json();
@@ -75,6 +90,7 @@
           let totalSeconds = 0
           let progressMeters = 0
           let progressSeconds = 0
+         const steps = []
          for (let i = 0; i < state.runs.length; i++) {
            let run = state.runs[i];
            totalMeters += run.meters;
@@ -84,10 +100,16 @@
              progressSeconds += run.seconds;
            }
          }
+         let acc = 0
+         for (let i = 0; i < state.runs.length-1; i++) {
+            acc += state.runs[i].meters
+            steps.push(acc / totalMeters)
+         }
          progressMeters += state.progressMeters + state.accProgressMeters;
          progressSeconds += state.progressSeconds + state.accProgressSeconds;
          const twodigits = (d) => d > 9 ? ""+d : "0"+d;
          const remaining = Math.max(0, Math.round(totalSeconds - progressSeconds));
+         // const remaining = Math.floor(totalSeconds * (1 - progressMeters / totalMeters));
          const seconds = remaining % 60;
          const minutesR = Math.floor(remaining / 60);
          const minutes = minutesR % 60;
@@ -95,7 +117,8 @@
           return {
             displayMeters: progressMeters.toFixed(2)+" meters",
             remainingTime: `${twodigits(hours)}:${twodigits(minutes)}:${twodigits(seconds)}`,
-            totalProgress: progressMeters / totalMeters
+            totalProgress: progressMeters / totalMeters,
+            steps
           }
         }
         const $stats = document.getElementById("stats")
@@ -107,9 +130,14 @@
             </div>
             <div class="body">
               <div class="progress" style="transform:translateX(${(stats.totalProgress * 100).toFixed(2)}%)"></div>
+              ${stats.steps.map(p => `<div class="step" style="left:${(p * 100).toFixed(2)}%"></div>`).join("")}
             </div>
           </div>`
         }
+
+        fetchState().then(state => {
+          render(getStats(state));
+        });
         setInterval(() => {
           fetchState().then(state => {
             render(getStats(state));
