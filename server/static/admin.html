@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      .field {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0 5px;
+      }
+      .field label {
+        text-align: right;
+        padding-right: 5px;
+        flex: 1;
+      }
+      .field > * {
+        flex: 2;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://unpkg.com/react/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      const useCounter = (time = 1000) => {
+        const [n, setN] = useState(0);
+        useEffect(() => {
+          const i = setInterval(() => setN((n) => n + 1), time);
+          return () => clearInterval(i);
+        }, [time]);
+        return n;
+      };
+
+      const useFetch = (url, extra = []) => {
+        const [state, setState] = useState(null);
+        useEffect(() => {
+          fetch(url)
+            .then((r) => r.json())
+            .then(setState);
+        }, [url, ...extra]);
+        return state;
+      };
+
+      const Button = ({ onClick, title }) => (
+        <button onClick={onClick}>{title}</button>
+      );
+
+      const Section = ({ title, children }) => (
+        <div>
+          <h2>{title}</h2>
+          <div>{children}</div>
+        </div>
+      );
+
+      const CuratorAdmin = () => {
+        const initState = useFetch("/curator/state");
+        const [state, setState] = useState(null);
+        useEffect(() => {
+          if (!initState) return;
+          const { command, population, cwd, generationDurationSec, totalGenerations } =
+            initState;
+          setState({ command, population, cwd, generationDurationSec, totalGenerations });
+        }, [initState]);
+
+        if (!state) return <Section title="Curator">Loading...</Section>;
+        return (
+          <Section title="Curator">
+            <p className="field">
+              <label htmlFor="curator-cwd">Cwd</label>
+              <input
+                name="curator-cwd"
+                value={state.cwd}
+                onChange={(e) =>
+                  setState((state) => ({ ...state, cwd: e.target.value }))
+                }
+              />
+            </p>
+            <p className="field">
+              <label htmlFor="curator-command">Command</label>
+              <input
+                name="curator-command"
+                value={state.command}
+                onChange={(e) =>
+                  setState((state) => ({ ...state, command: e.target.value }))
+                }
+              />
+            </p>
+            <p className="field">
+              <label htmlFor="curator-population">
+                population
+              </label>
+              <input
+                type="number"
+                step={1}
+                name="curator-population"
+                value={state.population}
+                onChange={(e) =>
+                  setState((state) =>
+                    isNaN(e.target.value)
+                      ? state
+                      : {
+                          ...state,
+                          population: parseInt(e.target.value, 10),
+                        }
+                  )
+                }
+              />
+            </p>
+            <p className="field">
+              <label htmlFor="curator-generationDurationSec">
+                generationDurationSec
+              </label>
+              <input
+                type="number"
+                step={1}
+                name="curator-generationDurationSec"
+                value={state.generationDurationSec}
+                onChange={(e) =>
+                  setState((state) =>
+                    isNaN(e.target.value)
+                      ? state
+                      : {
+                          ...state,
+                          generationDurationSec: parseInt(e.target.value, 10),
+                        }
+                  )
+                }
+              />
+            </p>
+            <p className="field">
+              <label htmlFor="curator-totalGenerations">totalGenerations</label>
+              <input
+                type="number"
+                step={1}
+                name="curator-totalGenerations"
+                value={state.totalGenerations}
+                onChange={(e) =>
+                  setState((state) =>
+                    isNaN(e.target.value)
+                      ? state
+                      : {
+                          ...state,
+                          totalGenerations: parseInt(e.target.value, 10),
+                        }
+                  )
+                }
+              />
+            </p>
+
+            <div>
+              <Button
+                title="Save"
+                onClick={() =>
+                  fetch("/curator/state", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(state),
+                  })
+                }
+              />
+            </div>
+          </Section>
+        );
+      };
+
+      const AxiDrawAdmin = () => {
+        const count = useCounter();
+        const state = useFetch("/runs/state", [count]);
+        if (!state) return <Section title="AxiDraw">Loading...</Section>;
+        return (
+          <Section title="AxiDraw">
+            {state.runs.length === 0 ? (
+              <p>No runs scheduled.</p>
+            ) : (
+              <ul>
+                {state.runs.map((r, i) => (
+                  <li key={i}>
+                    {r.meters} {r.seconds}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div>
+              <Button
+                title="Run Reset"
+                onClick={() => fetch("/runs/run-reset", { method: "POST" })}
+              />
+              <Button
+                title="Full Reset"
+                onClick={() => fetch("/runs/full-reset", { method: "POST" })}
+              />
+            </div>
+          </Section>
+        );
+      };
+
+      const Root = () => (
+        <div>
+          <p>
+            <a href="http://192.168.1.29/html/">http://192.168.1.29/html/</a>
+          </p>
+          <p>
+            <a href="http://192.168.1.21:8080/">http://192.168.1.21:8080/</a>
+          </p>
+          <AxiDrawAdmin />
+          <CuratorAdmin />
+        </div>
+      );
+
+      ReactDOM.render(<Root />, document.getElementById("app"));
+    </script>
+  </body>
+</html>

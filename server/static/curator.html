@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Curator</title>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-size: 12px;
+        font-family: Menlo, Monaco, "Courier New", monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      .progress {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        border-radius: 2px;
+        border: 8px solid #fff;
+        background: linear-gradient(#f66, #d00);
+        overflow: hidden;
+      }
+      .progress .bar {
+        background: white;
+        opacity: 0.5;
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      .progress .text-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .progress .text {
+        color: white;
+      }
+      .container {
+        display: flex;
+        flex-direction: row;
+        flex: 1;
+      }
+      .container > * {
+        flex: 1;
+        background-repeat: no-repeat;
+        background-position-x: center;
+        background-size: contain;
+      }
+      .root {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      header {
+        position: absolute;
+        top: 0;
+        width: 100%;
+      }
+      .choices {
+        color: #f00;
+        text-align: center;
+        display: flex;
+        flex-direction: row;
+        font-size: 3vw;
+      }
+      .choices > * {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://unpkg.com/react/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      const useCounter = (time = 1000) => {
+        const [n, setN] = useState(0);
+        useEffect(() => {
+          const i = setInterval(() => setN((n) => n + 1), time);
+          return () => clearInterval(i);
+        }, [time]);
+        return n;
+      };
+
+      const useFetch = (url, extra = []) => {
+        const [state, setState] = useState(null);
+        useEffect(() => {
+          fetch(url)
+            .then((r) => r.json())
+            .then(setState);
+        }, [url, ...extra]);
+        return state;
+      };
+
+      const ProgressPart = ({ state }) => {
+        useCounter(100);
+        const progress =
+          (Date.now() - state.generationStartTime) /
+          (1000 * state.generationDurationSec);
+        return !state.generationStartTime ? null : (
+          <div className="progress">
+            <div
+              className="bar"
+              style={{
+                transform: `translateX(${(progress * 100).toFixed(2)}%)`,
+              }}
+            ></div>
+            <div className="text-container">
+              <span className="text">
+                Generation {state.generationIndex + 1} /{" "}
+                {state.totalGenerations}
+              </span>
+            </div>
+          </div>
+        );
+      };
+
+      const Choice = ({ choice }) => {
+        return (
+          <div
+            style={{
+              backgroundImage: `url('/curator/generate?choice=${encodeURIComponent(
+                JSON.stringify(choice)
+              )}')`,
+            }}
+          />
+        );
+      };
+
+      const Root = () => {
+        const counter = useCounter();
+        const state = useFetch("/curator/state", [counter]);
+        if (!state || state.choices.length === 0) return null;
+
+        return (
+          <div className="root">
+            <header>
+              <ProgressPart state={state} />
+              <div className="choices">
+                {state.choices.map((choice, i) => (
+                  <div key={i}>!choice {i}</div>
+                ))}
+              </div>
+            </header>
+            <div className="container">
+              {state.choices.map((choice, i) => (
+                <Choice key={i} i={i} choice={state.choices[i]} />
+              ))}
+            </div>
+          </div>
+        );
+      };
+
+      ReactDOM.render(<Root />, document.getElementById("app"));
+    </script>
+  </body>
+</html>

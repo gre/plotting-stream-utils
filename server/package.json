@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "server",
   "version": "1.0.0",
   "main": "index.js",
@@ -6,9 +7,15 @@
   "dependencies": {
     "body-parser": "^1.19.1",
     "express": "^4.17.2",
-    "morgan": "^1.10.0"
+    "mkdirp": "^1.0.4",
+    "morgan": "^1.10.0",
+    "rimraf": "^3.0.2",
+    "tmi.js": "^1.8.5"
+  },
+  "devDependencies": {
+    "prettier": "^2.5.1"
   },
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node index.mjs"
   }
 }

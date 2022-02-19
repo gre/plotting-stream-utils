@@ -1,75 +1,76 @@
-
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title></title>
     <style>
-        html, body {
-            padding: 0;
-            margin: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            font-size: 48px;
-            font-family: Menlo, Monaco, 'Courier New', monospace;
-        }
-        * {
-          box-sizing: border-box;
-        }
-        #main {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-        #stats {
-            position: absolute;
-            width: 100%;
-            bottom: 0;
-        }
-        .head {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          padding: 6px 4px;
-        }
-        .displayMeters {
-            color: #F00;
-            text-shadow: #fff 3px 3px 0px, #fff -3px -3px 0px, #fff 3px -3px 0px, #fff -3px 3px 0px;
-        }
-        .remainingTime {
-            color: #FFF;
-        }
-        .body {
-          position: relative;
-          width: 100%;
-          height: 32px;
-          border-radius: 2px;
-          border: 8px solid #fff;
-          background: linear-gradient(#F66, #D00);
-          overflow: hidden;
-        }
-        .progress {
-          background: #fCC;
-          width: 100%;
-          height: 100%;
-          position: relative;
-        }
-        .step {
-          width: 8px;
-          transform: translateX(-4px);
-          height: 100%;
-          background: #fff;
-          position: absolute;
-          top: 0;
-        }
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-size: 48px;
+        font-family: Menlo, Monaco, "Courier New", monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      #main {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      #stats {
+        position: absolute;
+        width: 100%;
+        bottom: 0;
+      }
+      .head {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 6px 4px;
+      }
+      .displayMeters {
+        color: #f00;
+        text-shadow: #fff 3px 3px 0px, #fff -3px -3px 0px, #fff 3px -3px 0px,
+          #fff -3px 3px 0px;
+      }
+      .remainingTime {
+        color: #fff;
+      }
+      .body {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        border-radius: 2px;
+        border: 8px solid #fff;
+        background: linear-gradient(#f66, #d00);
+        overflow: hidden;
+      }
+      .progress {
+        background: #fcc;
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+      .step {
+        width: 8px;
+        transform: translateX(-4px);
+        height: 100%;
+        background: #fff;
+        position: absolute;
+        top: 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="main">
       <div id="stats"></div>
     </div>
@@ -79,75 +80,91 @@
       // TODO timing to be counting remaining time of a given layer
       // TODO timing to fall into remaining cm when it's <= 0
       // TODO bar colors + admin to set it
-        async function fetchState() {
-          const r = await fetch("http://localhost:3887/runs/state");
-          const state = await r.json();
-          return state;
-        }
-        function getStats (state) {
-          if (state.runs.length===0) return;
-          let totalMeters = 0
-          let totalSeconds = 0
-          let progressMeters = 0
-          let progressSeconds = 0
-         const steps = []
-         for (let i = 0; i < state.runs.length; i++) {
-           let run = state.runs[i];
-           totalMeters += run.meters;
-           totalSeconds += run.seconds;
-           if (state.index > i) {
-             progressMeters += run.meters;
-             progressSeconds += run.seconds;
-           }
-         }
-         let acc = 0
-         for (let i = 0; i < state.runs.length-1; i++) {
-            acc += state.runs[i].meters
-            steps.push(acc / totalMeters)
-         }
-         progressMeters += state.progressMeters + state.accProgressMeters;
-         progressSeconds += state.progressSeconds + state.accProgressSeconds;
-         const twodigits = (d) => d > 9 ? ""+d : "0"+d;
-         const remaining = Math.max(0, Math.round(totalSeconds - progressSeconds));
-         // const remaining = Math.floor(totalSeconds * (1 - progressMeters / totalMeters));
-         const seconds = remaining % 60;
-         const minutesR = Math.floor(remaining / 60);
-         const minutes = minutesR % 60;
-         const hours = Math.floor(minutesR / 60);
-          return {
-            displayMeters: progressMeters.toFixed(2)+" meters",
-            remainingTime: `${twodigits(hours)}:${twodigits(minutes)}:${twodigits(seconds)}`,
-            totalProgress: progressMeters / totalMeters,
-            steps
+      async function fetchState() {
+        const r = await fetch("http://localhost:3887/runs/state");
+        const state = await r.json();
+        return state;
+      }
+      function getStats(state) {
+        if (state.runs.length === 0) return;
+        let totalMeters = 0;
+        let totalSeconds = 0;
+        let progressMeters = 0;
+        let progressSeconds = 0;
+        const steps = [];
+        for (let i = 0; i < state.runs.length; i++) {
+          let run = state.runs[i];
+          totalMeters += run.meters;
+          totalSeconds += run.seconds;
+          if (state.index > i) {
+            progressMeters += run.meters;
+            progressSeconds += run.seconds;
           }
         }
-        const $stats = document.getElementById("stats")
-        function render (stats) {
-          $stats.innerHTML = !stats ? "" : `<div>
+        let acc = 0;
+        for (let i = 0; i < state.runs.length - 1; i++) {
+          acc += state.runs[i].meters;
+          steps.push(acc / totalMeters);
+        }
+        progressMeters += state.progressMeters + state.accProgressMeters;
+        progressSeconds += state.progressSeconds + state.accProgressSeconds;
+        const twodigits = (d) => (d > 9 ? "" + d : "0" + d);
+        const remaining = Math.max(
+          0,
+          Math.round(totalSeconds - progressSeconds)
+        );
+        // const remaining = Math.floor(totalSeconds * (1 - progressMeters / totalMeters));
+        const seconds = remaining % 60;
+        const minutesR = Math.floor(remaining / 60);
+        const minutes = minutesR % 60;
+        const hours = Math.floor(minutesR / 60);
+        return {
+          displayMeters: progressMeters.toFixed(2) + " meters",
+          remainingTime: `${twodigits(hours)}:${twodigits(minutes)}:${twodigits(
+            seconds
+          )}`,
+          totalProgress: progressMeters / totalMeters,
+          steps,
+        };
+      }
+      const $stats = document.getElementById("stats");
+      function render(stats) {
+        $stats.innerHTML = !stats
+          ? ""
+          : `<div>
             <div class="head">
               <span class="displayMeters">${stats.displayMeters}</span>
               <span class="remainingTime">${stats.remainingTime}</span>
             </div>
             <div class="body">
-              <div class="progress" style="transform:translateX(${(stats.totalProgress * 100).toFixed(2)}%)"></div>
-              ${stats.steps.map(p => `<div class="step" style="left:${(p * 100).toFixed(2)}%"></div>`).join("")}
+              <div class="progress" style="transform:translateX(${(
+                stats.totalProgress * 100
+              ).toFixed(2)}%)"></div>
+              ${stats.steps
+                .map(
+                  (p) =>
+                    `<div class="step" style="left:${(p * 100).toFixed(
+                      2
+                    )}%"></div>`
+                )
+                .join("")}
             </div>
-          </div>`
-        }
+          </div>`;
+      }
 
-        fetchState().then(state => {
+      fetchState().then((state) => {
+        render(getStats(state));
+      });
+      setInterval(() => {
+        fetchState().then((state) => {
           render(getStats(state));
         });
-        setInterval(() => {
-          fetchState().then(state => {
-            render(getStats(state));
-          })
-        }, 500);
+      }, 500);
     </script>
     <script>
-        setTimeout(() => {
+      setTimeout(() => {
         //    location.href = location.href;
-        }, 10000)
+      }, 10000);
     </script>
-</body>
+  </body>
 </html>
