@@ -2,6 +2,7 @@ import express from "express";
 import morgan from "morgan";
 import bodyParser from "body-parser";
 import axidrawServer from "./axidraw.mjs";
+import giveawayServer from "./giveaway.mjs";
 import curatorServer from "./curator.mjs";
 import chat from "./chat.mjs";
 
@@ -16,6 +17,7 @@ app.use(bodyParser.json());
 
 curatorServer(app, client);
 axidrawServer(app, client);
+giveawayServer(app, client);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

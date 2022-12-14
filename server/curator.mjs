@@ -120,8 +120,7 @@ export default function (app, client) {
       "--file",
       file,
     ];
-    const p = spawn(state.command, args, {      cwd: state.cwd,
-    });
+    const p = spawn(state.command, args, { cwd: state.cwd });
     p.stdout.on("data", (data) => {
       console.log(`stdout: ${data}`);
     });
