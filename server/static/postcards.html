@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Curator</title>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-size: 12px;
+        font-family: Menlo, Monaco, "Courier New", monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      .root {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      .container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: white;
+      }
+      .container .preview {
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        flex: 1;
+      }
+      .wheel-container {
+        position: relative;
+        width: 96vh;
+        height: 96vh;
+        align-self: center;
+        margin: 2vh;
+      }
+      .wheel {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle at 50% 50%, #35a 0%, #000 100%
+        );
+        border-radius: 50%;
+        border: 1vh solid black;
+        overflow: hidden;
+      }
+      .wheel-item {
+        position: absolute;
+        top: 45%;
+        left: 0%;
+        padding: 2vh;
+        padding-left: 14%;
+        width: 100%;
+        font-size: 3vh;
+        background: #35a;
+        color: white;
+      }
+      .wheel-cursor {
+        position: absolute;
+        top: 44%;
+        left: 52%;
+        width: 50%;
+        height: 10%;
+        background-color: #FFFFFF66;
+        border: 1vh solid black;
+      }
+      .wheel-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20%;
+        height: 20%;
+        background: radial-gradient(circle at 50% 50%, #fff 0%, #35a 100%);
+        border-radius: 50%;
+        border: 1vh solid black;
+      }
+      .wheel-center::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 25%;
+        height: 25%;
+        background: black;
+        border-radius: 50%;
+      }
+      @keyframes roll {
+        0% {
+          transform: translate(-50%, -50%) rotate(-3000deg);
+          opacity: 0;
+        }
+        1% {
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://unpkg.com/react/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone/babel.min.js"></script>
+    <script type="text/babel">
+      const { useState, useEffect, useMemo} = React;
+
+      const useCounter = (time = 1000) => {
+        const [n, setN] = useState(0);
+        useEffect(() => {
+          const i = setInterval(() => setN((n) => n + 1), time);
+          return () => clearInterval(i);
+        }, [time]);
+        return n;
+      };
+
+      const useFetch = (url, extra = []) => {
+        const [state, setState] = useState(null);
+        useEffect(() => {
+          fetch(url)
+            .then((r) => r.json())
+            .then(setState);
+        }, [url, ...extra]);
+        return state;
+      };
+
+      function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = resolve;
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      const Preview = ({ seed, generator }) => {
+        const [backgroundImage, setBackgroundImage] = useState("");
+        useEffect(() => {
+          let url = `/postcards/generate?seed=${seed}&generator=${generator}`;
+          loadImage(url).then(() => {
+            setBackgroundImage(url)
+          }, e => {
+            console.error(e);
+          });
+        }, [seed, generator])
+        return (
+          <div
+          className="preview"
+            style={{
+              backgroundImage: `url('${backgroundImage}')`,
+            }}
+          />
+        );
+      };
+
+      const CurationMode = ({state}) => {
+        // TODO nice UI that recap the commands possible to type
+        // for the curation to finish
+        return (
+        <div className="root">
+            <div className="container">
+              <Preview seed={state.seed} generator={state.generator} />
+            </div>
+          </div>
+        )
+      }
+
+      const DURATION = 15000;
+      const EXTRA_DURATION = 5000;
+      const WheelMode = ({state}) => {
+
+        const {winner,index} = useMemo(() => {
+          const keys = Object.keys(state.generatorNames);
+          const index = Math.floor(Math.random() * keys.length);
+          return {winner:keys[index],index};
+        }, []);
+
+        
+        // TODO set the winner in the state
+        useEffect(() => {
+          const timeout = setTimeout(() => {
+            fetch("/postcards/set-generator", {
+              method: "POST",
+              body: JSON.stringify({ generator: winner }),
+              headers: {
+      'Content-Type': 'application/json'
+    },
+            });
+          }, DURATION + EXTRA_DURATION);
+          return () => clearTimeout(timeout);
+        }, [winner]);
+
+        // TODO animate the wheel to stop on the winner
+        const choices = Object.keys(state.generatorNames)
+        const total = choices.length;
+        return (
+          <div className="root">
+            <div className="container">
+            <div className="wheel-container">
+              <div className="wheel" style={{ animation: DURATION+"ms roll", animationTimingFunction:"cubic-bezier(.23,.23,.56,1)" }}>
+                {choices.map((key, i) => (
+                  <div key={key} className="wheel-item" style={{
+                   transform: `rotate(${(i-index) * 360 / total}deg) translate(50%,0)`
+                  }}>
+                    <span className="title">{state.generatorNames[key]}</span>
+                  </div>
+                ))}
+                </div>
+                <div className="wheel-cursor" />
+                <div className="wheel-center" />
+            </div>
+            </div>
+          </div>
+        )
+      }
+
+      const Root = () => {
+        const [state, setState] = useState(null);
+
+        useEffect(() => {
+          function reconnectLoop() {
+            const eventSource = new EventSource("/postcards/state");
+            eventSource.onmessage = (e) => {
+              console.log("RELOAD");
+              location.href += "";
+              eventSource.close();
+            };
+            eventSource.onerror = (e) => {
+              eventSource.close();
+              setTimeout(reconnectLoop, 1000);
+            };
+          }
+
+          const source = new EventSource("/postcards/state");
+          source.onmessage = (e) => {
+            console.log(e.data);
+            setState((prev) => ({ ...prev, ...JSON.parse(e.data) }));
+          };
+          source.onerror = (e) => {
+            console.log("DISCONNECT");
+            setTimeout(reconnectLoop, 1000);
+            source.close();
+          };
+        }, []);
+
+        if (!state) return null;
+        if (state.username && !state.generator) {
+          return (
+            <WheelMode state={state} />
+        );
+        }
+
+        if (state.generator) {
+          return (
+            <CurationMode state={state} />
+        );
+        }
+
+        return null;
+      };
+
+      ReactDOM.render(<Root />, document.getElementById("app"));
+    </script>
+  </body>
+</html>

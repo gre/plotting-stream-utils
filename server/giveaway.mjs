@@ -33,7 +33,7 @@ export default function (app, client) {
             target,
             "A giveaway is ongoing... type !giveaway to get the chance to obtain a physical plot shipped to you – offered and signed by @greweb"
           );
-        }, 60000);
+        }, 5 * 60000);
         return;
       } else if (commandName === "!giveaway-reset") {
         client.say(target, "Giveaway was reset.");
@@ -67,10 +67,10 @@ export default function (app, client) {
         client.say(
           target,
           "You are in @" +
-            username +
-            " – (" +
-            state.users.length +
-            " participants in total)"
+          username +
+          " – (" +
+          state.users.length +
+          " participants in total)"
         );
       } else {
         client.say(
@@ -83,6 +83,6 @@ export default function (app, client) {
   });
 
   app.get("/giveaway/state", (req, res) => {
-    res.send({opened: state.opened, users: state.users });
+    res.send({ opened: state.opened, users: state.users });
   });
 }

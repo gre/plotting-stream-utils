@@ -5,6 +5,7 @@ import axidrawServer from "./axidraw.mjs";
 import giveawayServer from "./giveaway.mjs";
 import curatorServer from "./curator.mjs";
 import chat from "./chat.mjs";
+import postcardsServer from "./postcards.mjs";
 
 const client = chat();
 
@@ -18,6 +19,7 @@ app.use(bodyParser.json());
 curatorServer(app, client);
 axidrawServer(app, client);
 giveawayServer(app, client);
+postcardsServer(app, client);
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
